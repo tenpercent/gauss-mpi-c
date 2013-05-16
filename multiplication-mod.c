@@ -22,7 +22,7 @@ int simpleMatrixMultiply(double* const a, double* const b, double* const out, in
 	  s10=0.;
 	  s11=0.;
 	  */
-	  for (j=0; j<q; j++, pa++){
+	  for (j=0; j<q; ++j, ++pa){
 	    s00+=pa[0]*pb[j*r];
 	    s01+=pa[0]*pb[j*r+1];
 	    s10+=pa[q]*pb[j*r];
@@ -48,7 +48,7 @@ int simpleMatrixMultiply(double* const a, double* const b, double* const out, in
 	  s01=0.;
 	  s10=0.;
 	  s11=0.;
-	  for (j=0; j<q; j++, pa++){
+	  for (j=0; j<q; ++j, ++pa){
 	    s00+=pa[0]*pb[j*r];
 	    s01+=pa[0]*pb[j*r+1];
 	    s10+=pa[q]*pb[j*r];
@@ -61,8 +61,8 @@ int simpleMatrixMultiply(double* const a, double* const b, double* const out, in
 	}//for i
 
       }//for m
-      for (i=0; i<p; i++){
-	for (j=0; j<q; j++){
+      for (i=0; i<p; ++i){
+	for (j=0; j<q; ++j){
 	  out[i*r+r-1]+=a[i*q+j]*b[j*r+r-1];
 	}
       }
@@ -78,7 +78,7 @@ int simpleMatrixMultiply(double* const a, double* const b, double* const out, in
 	  s10=0.;
 	  s01=0.;
 	  s11=0.;
-	  for (j=0; j<q; j++, pa++){
+	  for (j=0; j<q; ++j, ++pa){
 	    s00+=pa[0]*pb[j*r];
 	    s01+=pa[0]*pb[j*r+1];
 	    s10+=pa[q]*pb[j*r];
@@ -91,8 +91,8 @@ int simpleMatrixMultiply(double* const a, double* const b, double* const out, in
 
 	}//for i
       }//for m
-      for (i=0; i<r; i++){
-	for(j=0; j<q; j++){
+      for (i=0; i<r; ++i){
+	for(j=0; j<q; ++j){
 	  out[(p-1)*r+i]+=a[(p-1)*q+j]*b[j*r+i];
 	}
       }
@@ -106,7 +106,7 @@ int simpleMatrixMultiply(double* const a, double* const b, double* const out, in
 	  s01=0.;
 	  s10=0.;
 	  s11=0.;
-	  for (j=0; j<q; j++, pa++){
+	  for (j=0; j<q; ++j, ++pa){
 	    s00+=pa[0]*pb[j*r];
 	    s01+=pa[0]*pb[j*r+1];
 	    s10+=pa[q]*pb[j*r];
@@ -118,13 +118,13 @@ int simpleMatrixMultiply(double* const a, double* const b, double* const out, in
 	  pc[(i+1)*r+1]+=s11;
 	}//for i
       }//for m
-      for (i=0; i<r; i++){
-	for(j=0; j<q; j++){
+      for (i=0; i<r; ++i){
+	for(j=0; j<q; ++j){
 	  out[(p-1)*r+i]+=a[(p-1)*q+j]*b[j*r+i];
 	}
       }
-      for (i=0; i<p-1; i++){
-	for (j=0; j<q; j++){
+      for (i=0; i<p-1; ++i){
+	for (j=0; j<q; ++j){
 	  out[i*r+r-1]+=a[i*q+j]*b[j*r+r-1];
 	}
       }

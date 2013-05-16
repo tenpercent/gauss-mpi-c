@@ -1,5 +1,6 @@
 #include "tools.h"
 #include "io.h"
+#include "gauss-invert.h"
 #include <stddef.h>
 extern MPI_Op MPI_searchMainBlock;
 extern MPI_Datatype MPI_mainBlockInfo;
@@ -11,6 +12,15 @@ int gaussInvert(double *a, double *b, int matrix_side, int block_side,
 
   int first_row, first_row_proc_id, last_row_c;
   int current_row, current_row_proc_id;
+
+  int i, j, k, min_j, min_k_global;
+  int res;
+
+  int buf_size;
+
+  double temp=-1.;
+
+  mainBlockInfo in, out;
 
 	int total_block_rows, total_full_block_rows, block_size, block_string_size;
 	int max_block_rows_pp, max_rows_pp, short_block_string_size, last_block_row_proc_id, last_block_row_in_current_pr;
@@ -24,14 +34,7 @@ int gaussInvert(double *a, double *b, int matrix_side, int block_side,
 	&current_pr_full_rows, &last_block_row_width,
 	&matrix_size_current_pr);
 
-  int i, j, k, min_j, min_k_global;
-  int res;
-
-  int buf_size = 2 * block_string_size;
-
-	double temp=-1.;
-
-  mainBlockInfo in, out;
+  buf_size = 2 * block_string_size;
 
  	in.rank = current_pr;
 	in.minnorm = 0.;

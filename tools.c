@@ -107,14 +107,19 @@ int printBlockMatrix(double* const a, int n, int m){
   return 0;
 }
 int makeBlockMatrix_Rows(double* const a, int matrix_side, int block_side, int total_pr, int current_pr){
-  if ((matrix_side<1)||(block_side<1)){
-    printf("incorrect size of a matrix or a block!\n\t --makeBlockMatrix");
-    return -1;
-  }
   int i, j, k, l;
   int total_block_rows, total_full_block_rows, block_size, block_string_size;
   int max_block_rows_pp, max_rows_pp, short_block_string_size, last_block_row_proc_id, last_block_row_in_current_pr;
   int small_block_row_width, small_block_size, current_pr_full_rows, last_block_row_width, matrix_size_current_pr;
+  int count=0;
+  int res = 0;
+  double* b = 0;
+
+  if ((matrix_side<1)||(block_side<1)){
+    printf("incorrect size of a matrix or a block!\n\t --makeBlockMatrix");
+    return -1;
+  }
+  
   initParameters(matrix_side, block_side, total_pr, current_pr, 
 
   &total_block_rows, &total_full_block_rows, 
@@ -125,9 +130,6 @@ int makeBlockMatrix_Rows(double* const a, int matrix_side, int block_side, int t
   &current_pr_full_rows, &last_block_row_width,
   &matrix_size_current_pr);
 
-  int count=0;
-  int res = 0;
-  double* b = 0;
   b = (double*) malloc(matrix_size_current_pr*sizeof(double));
 
   if (small_block_row_width!=0){
@@ -173,14 +175,19 @@ int makeBlockMatrix_Rows(double* const a, int matrix_side, int block_side, int t
   return 0;
 }
 int makeBlockMatrix_Columns(double* const a, int matrix_side, int block_side, int total_pr, int current_pr){
- if ((matrix_side<1)||(block_side<1)){
-    printf("incorrect size of a matrix or a block!\n\t --makeBlockMatrix");
-    return -1;
-  }
   int i, j, k, l;
   int total_block_rows, total_full_block_rows, block_size, block_string_size;
   int max_block_rows_pp, max_rows_pp, short_block_string_size, last_block_row_proc_id, last_block_row_in_current_pr;
   int small_block_row_width, small_block_size, current_pr_full_rows, last_block_row_width, matrix_size_current_pr;
+  int count=0;
+  int res = 0;
+  double* b = 0;
+
+  if ((matrix_side<1)||(block_side<1)){
+    printf("incorrect size of a matrix or a block!\n\t --makeBlockMatrix");
+    return -1;
+  }
+  
   initParameters(matrix_side, block_side, total_pr, current_pr, 
   &total_block_rows, &total_full_block_rows, 
   &block_size, &block_string_size, 
@@ -190,10 +197,6 @@ int makeBlockMatrix_Columns(double* const a, int matrix_side, int block_side, in
   &current_pr_full_rows, &last_block_row_width,
   &matrix_size_current_pr);
 
-  int count=0;
-  int res = 0;
-
-  double* b = 0;
   b = (double*) malloc(matrix_size_current_pr*sizeof(double));
 
   if (small_block_row_width!=0){
@@ -241,11 +244,11 @@ int makeBlockMatrix_Columns(double* const a, int matrix_side, int block_side, in
   return 0;
 }
 int copyMatrix(double* const in, double* const out, int size){
+  int i;
   if (!size){
     printf("tried to copy nothing!\n\t -- copyMatrix\n");
     return -1;
   }
-  int i;
   //double tempi;
   for (i=0; i<size; i++){
     //tempi=in[i];
@@ -271,25 +274,20 @@ int swapMatrix(double* const a, double* const b, int size){
 }
 
 int idMatrix(double* const a, int m){
+  int i;
+  int size = m*m;
+
   if (!m){
     printf("Bad matrix size!\n\t--idMatrix\n");
     return -1;
   }
-  int i;
-  //int res;
-  int size = m*m;
-  //res = zeroMatrix(a, size);
-  //if (res!=0){
-  //  printf("zeroMatrix failed!\n\t--idMatrix\n");
-  //}
+  
   for (i=0; i<size; i++){
     *(a+i)=0.;
   }
   for (i=0; i<size; i+=(m+1)){
     a[i]=1.;
   }
-  // printf("idMatrix says:\n");
-  // printMatrix(a, m, m);
   return 0;
 }
 
@@ -321,13 +319,13 @@ int subtractFromMatrix(double* const a, double* const b, int size){
 double matrixNorm(double* const a, int m){
   //здесь мы будем как-нибудь считать норму m*m матрицы
   //if (m<1){
+  double temp = 0.;
+  double ans = 0.;
+  int i, j;
   if (!m){
     printf("Can't find a norm of empty matrix\n");
     return -1;
   }
-  double temp = 0.;
-  double ans = 0.;
-  int i, j;
   for (i=0; i<m; i++){
     temp = 0.;
     for (j=0; j<m; j++){

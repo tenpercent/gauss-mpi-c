@@ -1,5 +1,6 @@
 #include "tools.h"
 #include "io.h"
+#include "gauss-invert.h"
 #include <stddef.h>
 extern MPI_Op MPI_searchMainBlock;
 extern MPI_Datatype MPI_mainBlockInfo;
@@ -16,6 +17,12 @@ int gaussInvert(double *a, double *b, int matrix_side, int block_side,
 	int total_block_rows, total_full_block_rows, block_size, block_string_size;
 	int max_block_rows_pp, max_rows_pp, short_block_string_size, last_block_row_proc_id, last_block_row_in_current_pr;
 	int small_block_row_width, small_block_size, current_pr_full_rows, last_block_row_width, matrix_size_current_pr;
+  int buf_size;
+  int i, j, k, j1, min_j, min_k_global;
+  int res;
+  double temp=-1.;
+  mainBlockInfo in, out;
+
 	initParameters(matrix_side, block_side, total_pr, current_pr, 
 	&total_block_rows, &total_full_block_rows, 
 	&block_size, &block_string_size, 
@@ -25,14 +32,7 @@ int gaussInvert(double *a, double *b, int matrix_side, int block_side,
 	&current_pr_full_rows, &last_block_row_width,
 	&matrix_size_current_pr);
 
-  int i, j, k, l, min_j, min_k_global;
-  int res;
-
-  int buf_size = 2 * block_string_size;
-
-	double temp=-1.;
-
-  mainBlockInfo in, out;
+  buf_size = 2 * block_string_size;
 
  	in.rank = current_pr;
 	in.minnorm = 0.;
@@ -44,8 +44,9 @@ int gaussInvert(double *a, double *b, int matrix_side, int block_side,
 		buf_string_2[i] = 0.;
  	}
  	for (i=0; i<total_full_block_rows; i++){
-    start_nonzero_a = block_size*(i+1);
+    start_nonzero_a = block_size*(i);
     nonzero_a_size = block_string_size - start_nonzero_a;
+    buf_size = block_string_size + nonzero_a_size;
 
 		first_row = (i+total_pr-1-current_pr)/total_pr;
 		first_row_proc_id = i%total_pr;
@@ -144,14 +145,14 @@ int gaussInvert(double *a, double *b, int matrix_side, int block_side,
         buf_string[j]=b[min_j*block_string_size+j];
 			}
 			//for (j=0; j<block_string_size; j++){
-      for (j=start_nonzero_a, k=0; j<block_string_size; j++, k++){
+      for (j=start_nonzero_a, j1=block_string_size; j<block_string_size; j++, j1++){
 				//buf_string[j+block_string_size]=b[min_j*block_string_size+j];
-        buf_string[k+block_string_size]=a[min_j*block_string_size+j];
+        buf_string[j1]=a[min_j*block_string_size+j];
 			}
     }
 
 		//MPI_Bcast(buf_string, buf_size, MPI_DOUBLE, out.rank, MPI_COMM_WORLD);
-    MPI_Bcast(buf_string, block_string_size + nonzero_a_size, MPI_DOUBLE, out.rank, MPI_COMM_WORLD);
+    MPI_Bcast(buf_string, buf_size, MPI_DOUBLE, out.rank, MPI_COMM_WORLD);
 
 		if (out.rank!=first_row_proc_id){
 			if (current_pr==first_row_proc_id){
@@ -162,26 +163,26 @@ int gaussInvert(double *a, double *b, int matrix_side, int block_side,
           b[first_row*block_string_size+j]=buf_string[j];
 				}
 				//for (j=0; j<block_string_size; j++){
-        for (j=start_nonzero_a, k=0; j<block_string_size; j++, k++){
+        for (j=start_nonzero_a, j1=block_string_size; j<block_string_size; j++, j1++){
 					//buf_string_2[j+block_string_size]=b[first_row*block_string_size+j];
-          buf_string_2[k+block_string_size]=a[first_row*block_string_size+j];
+          buf_string_2[j1]=a[first_row*block_string_size+j];
           //b[first_row*block_string_size+j]=buf_string[j+block_string_size];
-          a[first_row*block_string_size+j]=buf_string[k+block_string_size];
+          a[first_row*block_string_size+j]=buf_string[j1];
 				}
 				//MPI_Send(buf_string_2, buf_size, MPI_DOUBLE, out.rank, 42, MPI_COMM_WORLD);
-        MPI_Send(buf_string_2, block_string_size + nonzero_a_size, MPI_DOUBLE, out.rank, 42, MPI_COMM_WORLD);
+        MPI_Send(buf_string_2, buf_size, MPI_DOUBLE, out.rank, 42, MPI_COMM_WORLD);
 			}
 			if(current_pr==out.rank){
 				//MPI_Recv(buf_string_2, buf_size, MPI_DOUBLE, first_row_proc_id, 42, MPI_COMM_WORLD, &status);
-        MPI_Recv(buf_string_2, block_string_size + nonzero_a_size, MPI_DOUBLE, first_row_proc_id, 42, MPI_COMM_WORLD, &status);
+        MPI_Recv(buf_string_2, buf_size, MPI_DOUBLE, first_row_proc_id, 42, MPI_COMM_WORLD, &status);
 				for (j=0; j<block_string_size; j++){
 					//a[min_j*block_string_size+j]=buf_string_2[j];
           b[min_j*block_string_size+j]=buf_string_2[j];
 				}
 				//for (j=0; j<block_string_size; j++){
-        for (j=start_nonzero_a, k=0; j<block_string_size; j++, k++){
+        for (j=start_nonzero_a, j1=block_string_size; j<block_string_size; j++, j1++){
 					//b[min_j*block_string_size+j]=buf_string_2[j+block_string_size];
-          a[min_j*block_string_size+j]=buf_string_2[k+block_string_size];
+          a[min_j*block_string_size+j]=buf_string_2[j1];
 				}
 			}
 		}
@@ -215,10 +216,11 @@ int gaussInvert(double *a, double *b, int matrix_side, int block_side,
 
   	for (j=first_row; j<max_block_rows_pp; j++){
       //for (k = i+1; k<total_full_block_rows; k++){
-      for (k = i+1, l=0; k<total_full_block_rows; k++, l++){
+      for (k = i+1, j1=1; k<total_full_block_rows; k++, j1++){
 		    //simpleMatrixMultiply(a + j*block_string_size + i*block_size, buf_string + k*block_size, buf_2, block_side, block_side, block_side);
-        simpleMatrixMultiply(a + j*block_string_size + i*block_size, buf_string + block_string_size + l*block_size, buf_2, block_side, block_side, block_side);
+        simpleMatrixMultiply(a + j*block_string_size + i*block_size, buf_string + block_string_size + j1*block_size, buf_2, block_side, block_side, block_side);
 			  subtractFromMatrix(a + j*block_string_size + k*block_size, buf_2, block_size);
+        //subtractFromMatrix(a + j*block_string_size + start_nonzero_a + j1*block_size, buf_2, block_size);
     	}
       for (k = 0; k<total_full_block_rows; k++){
 				//simpleMatrixMultiply(a + j*block_string_size + i*block_size, buf_string + block_string_size + k*block_size, buf_2, block_side, block_side, block_side);
@@ -227,7 +229,7 @@ int gaussInvert(double *a, double *b, int matrix_side, int block_side,
       }
       if(small_block_row_width){
         //simpleMatrixMultiply(a + j*block_string_size + i*block_size, buf_string + total_full_block_rows*block_size, buf_2, block_side, block_side, small_block_row_width);
-        simpleMatrixMultiply(a + j*block_string_size + i*block_size, buf_string + block_string_size + nonzero_a_size - small_block_size, buf_2, block_side, block_side, small_block_row_width);
+        simpleMatrixMultiply(a + j*block_string_size + i*block_size, buf_string + buf_size - small_block_size, buf_2, block_side, block_side, small_block_row_width);
         subtractFromMatrix(a + j*block_string_size + total_full_block_rows*block_size, buf_2, small_block_size);
 
         //simpleMatrixMultiply(a + j*block_string_size + i*block_size, buf_string + total_full_block_rows*block_size + block_string_size, buf_2, block_side, block_side, small_block_row_width);

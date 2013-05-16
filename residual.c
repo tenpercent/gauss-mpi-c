@@ -19,6 +19,11 @@ double MPI_getResidual_rewrite(double *reinitialized, double *reversed, int matr
 	int total_block_rows, total_full_block_rows, block_size, block_string_size;
 	int max_block_rows_pp, max_rows_pp, short_block_string_size, last_block_row_proc_id, last_block_row_in_current_pr;
 	int small_block_row_width, small_block_size, current_pr_full_rows, last_block_row_width, matrix_size_current_pr;
+	int current_pr_rows;
+
+	if(!blocks_order){}
+	//compiler, shut up!
+		
 	initParameters(matrix_side, block_side, total_pr, current_pr, 
 
 	&total_block_rows, &total_full_block_rows, 
@@ -29,7 +34,7 @@ double MPI_getResidual_rewrite(double *reinitialized, double *reversed, int matr
 	&current_pr_full_rows, &last_block_row_width,
 	&matrix_size_current_pr);
 	
-	int current_pr_rows = current_pr_full_rows * block_side;
+	current_pr_rows = current_pr_full_rows * block_side;
 	if ((small_block_row_width)&&(current_pr==last_block_row_proc_id)){
 		current_pr_rows += small_block_row_width;
 	}

@@ -14,10 +14,10 @@ double identity (int i, int j){
 void searchMainBlock(void *inv, void *inoutv, int *len, MPI_Datatype *MPI_mainBlockInfo){
   mainBlockInfo *in = (mainBlockInfo *) inv;
   mainBlockInfo *inout = (mainBlockInfo *) inoutv;
+  int i;
   if (!MPI_mainBlockInfo){
 
   }
-  int i;
   for (i=0; i<*len; ++i){
     if(in->label){
       if(inout->label){
@@ -200,7 +200,7 @@ int initMatrixByColumns(double *a, int n, int m, int p, int k){
     }
     return 0;
 }
-
+/*
 double MPI_getResidual(double *reinitialized, double *reversed, int matrix_side, int block_side, int total_pr, int current_pr, int *blocks_order, int *blocks_order_reversed,
 	double *buf_string, double *buf_string_2, double *buf_1, double *buf_2){
 	double residual = -1.;
@@ -212,7 +212,7 @@ double MPI_getResidual(double *reinitialized, double *reversed, int matrix_side,
 	double *buf = 0;
 
 	int i, j, k, l, m, pos_j, pos_k;
-
+	int current_pr_rows;
 	int total_block_rows, total_full_block_rows, block_size, block_string_size;
 	int max_block_rows_pp, max_rows_pp, short_block_string_size, last_block_row_proc_id, last_block_row_in_current_pr;
 	int small_block_row_width, small_block_size, current_pr_full_rows, last_block_row_width, matrix_size_current_pr;
@@ -225,8 +225,8 @@ double MPI_getResidual(double *reinitialized, double *reversed, int matrix_side,
 	&small_block_row_width, &small_block_size,
 	&current_pr_full_rows, &last_block_row_width,
 	&matrix_size_current_pr);
-	
-	int current_pr_rows = current_pr_full_rows * block_side;
+
+	current_pr_rows = current_pr_full_rows * block_side;
 	if ((small_block_row_width)&&(current_pr==last_block_row_proc_id)){
 		current_pr_rows += small_block_row_width;
 	}
@@ -328,7 +328,7 @@ double MPI_getResidual(double *reinitialized, double *reversed, int matrix_side,
 	
 	return residual;
 }
-
+*/
 int initParameters(int matrix_side, int block_side, int total_pr, int current_pr, 
 	int *total_block_rows, int *total_full_block_rows, 
 	int *block_size, int *block_string_size, 
@@ -376,6 +376,7 @@ void MPI_printUpperLeftBlock(double *a, int matrix_side, int block_side, int tot
 	int total_block_rows, total_full_block_rows, block_size, block_string_size;
 	int max_block_rows_pp, max_rows_pp, short_block_string_size, last_block_row_proc_id, last_block_row_in_current_pr;
 	int small_block_row_width, small_block_size, current_pr_full_rows, last_block_row_width, matrix_size_current_pr;
+	int corner_total_block_rows;
 	initParameters(matrix_side, block_side, total_pr, current_pr, 
 
 	&total_block_rows, &total_full_block_rows, 
@@ -395,7 +396,7 @@ void MPI_printUpperLeftBlock(double *a, int matrix_side, int block_side, int tot
 		corner_side = matrix_side;
 	}
 
-	int corner_total_block_rows = (corner_side + block_side - 1)/block_side;
+	corner_total_block_rows = (corner_side + block_side - 1)/block_side;
 	//int current_pr_block_rows = (corner_total_block_rows + total_pr - 1)/total_pr;
 	//int sendbuf_size = corner_side*block_side;
 
