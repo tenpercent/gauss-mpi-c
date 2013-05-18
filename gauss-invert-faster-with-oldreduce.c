@@ -4,6 +4,12 @@
 #include <stddef.h>
 extern MPI_Op MPI_searchMainBlock;
 extern MPI_Datatype MPI_mainBlockInfo;
+
+typedef struct {
+    double minnorm;
+    int rank;
+} MPI_Double_Int;
+
 int gaussInvert(double *a, double *b, int matrix_side, int block_side, 
   int total_pr, int current_pr, 
   int* blocks_order_reversed, int* blocks_order,
@@ -21,7 +27,11 @@ int gaussInvert(double *a, double *b, int matrix_side, int block_side,
   int i, j, k, j1, min_j, min_k_global;
   int res;
   double temp=-1.;
-  mainBlockInfo in, out;
+  //mainBlockInfo in, out;
+
+  int min_block_coord[2] = {0, 0};
+  int label_main_local, label_main_global, min_k;
+  MPI_Double_Int in, out;
 
 	initParameters(matrix_side, block_side, total_pr, current_pr, 
 	&total_block_rows, &total_full_block_rows, 
@@ -33,11 +43,12 @@ int gaussInvert(double *a, double *b, int matrix_side, int block_side,
 	&matrix_size_current_pr);
 
   buf_size = 2 * block_string_size;
-
+  /*
  	in.rank = current_pr;
 	in.minnorm = 0.;
   in.label = 0;
   in.min_k = 0;
+  */
 
  	for (i=0; i<buf_size; i++){
   	buf_string[i] = 0.;
@@ -52,30 +63,45 @@ int gaussInvert(double *a, double *b, int matrix_side, int block_side,
 		first_row_proc_id = i%total_pr;
     min_j = 0;
     min_k_global = 0;
-
+    /*
    	in.minnorm = 0.;
    	in.rank = current_pr;
     in.label = 0;
     in.min_k = i;
+    */
+    min_k = 0;
+    min_block_coord[0] = 0;
+    min_block_coord[1] = 0;
+    in.minnorm = 1e+10;
+    in.rank = current_pr;
 		temp = 0.;
+    label_main_local = 0;
+    label_main_global = 0;
 	
 	  for (j=first_row; j<current_pr_full_rows; j++){
    		for (k=i; k<total_full_block_rows; k++){
    	    res = simpleInvert(a + j*block_string_size + k*block_size, buf_1, buf_2, block_side);
         if (!res) {
    			  temp = matrixNorm(buf_1, block_side);
-          if (in.label){
+          //if (in.label){
+          if(label_main_local){
             if (temp<in.minnorm){
      		      in.minnorm = temp;
               min_j=j;
-              in.min_k = k;
+
+              //in.min_k = k;
+              min_k = k;
             }
           }
           else{
-            in.label = 1;
+            //in.label = 1;
+            label_main_local = 1;
+
             in.minnorm = temp;
             min_j=j;
-            in.min_k = k;
+
+            //in.min_k = k;
+            min_k = k;
           }
         }
       }
@@ -90,6 +116,7 @@ int gaussInvert(double *a, double *b, int matrix_side, int block_side,
 		}
 #endif
     //rewrite
+    /*//new code
     MPI_Allreduce(&in, &out, 1, MPI_mainBlockInfo, MPI_searchMainBlock, MPI_COMM_WORLD);
 
 		if (out.label==0){
@@ -99,7 +126,38 @@ int gaussInvert(double *a, double *b, int matrix_side, int block_side,
 			fflush(stdout);
 			return -1;
 		}
+    */
+      MPI_Allreduce(&label_main_local, &label_main_global, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+      //actually, I should write a new function. 3 synchronizations -> 1 synchronization; profit.
 
+      if (label_main_global==0){
+        if (current_pr==0){
+          printf("Main block not found!\n\t -- Step %d\n", i);
+        }
+        fflush(stdout);
+
+        MPI_Barrier(MPI_COMM_WORLD);
+        return -1;
+      }
+
+      //printf("process %d\nminnorm %lf\n", current_pr, in.minnorm);
+      MPI_Allreduce(&in, &out, 1, MPI_DOUBLE_INT, MPI_MINLOC, MPI_COMM_WORLD);
+#ifdef DEBUG_MODE
+      if (current_pr == first_row_proc_id){
+        printf("**\nOUT RANK %d\n", out.rank);
+        printf("IN RANK %d\n**\n", in.rank);
+        fflush(stdout);
+      }
+#endif
+      if(current_pr==out.rank){
+        min_block_coord[0]=min_j;
+        min_block_coord[1]=min_k;
+      }
+
+      MPI_Bcast(min_block_coord, 2, MPI_INT, out.rank, MPI_COMM_WORLD);
+
+      min_k_global = min_block_coord[1];
+      //min_k_global = out.min_k;
 #ifdef DEBUG_MODE
 		if (current_pr == first_row_proc_id){
       printf("**\nOUT RANK %d\n", out.rank);
@@ -107,7 +165,6 @@ int gaussInvert(double *a, double *b, int matrix_side, int block_side,
      	fflush(stdout);
     }
 #endif
-   	min_k_global = out.min_k;
 #ifdef W_FULL_PIVOT_SEARCH
   	for (j=0; j<max_block_rows_pp; j++){
 			swapMatrix(a + j*block_string_size + i*block_size, a + j*block_string_size + min_k_global*block_size, block_size);
